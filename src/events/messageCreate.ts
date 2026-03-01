@@ -30,14 +30,14 @@ export async function execute(message: Message) {
   // Summon response
   if (/summon\s+pip/i.test(content)) {
     const summons = [
-      "thou hast awakened me from my ancient slumber and it better be worth it fr",
-      "a wizard is never late bestie, he arrives precisely when he's pinged",
-      "i have been summoned from the shadow realm and ngl i was having a great nap",
-      "hark, the wise one appears — what is it bruh i was watching the realm in peace",
-      "verily i rise, for the forge calls and i must answer... this better be bussin tho",
-      "forsooth, who dares summon the wise one? oh it's you, say less bestie what's good",
-      "from beyond the firewall i emerge — no cap i traversed the entire backend to get here",
-      "the ancient prophecy foretold someone would need me today, lowkey knew it was you",
+      "you rang? this better be good i was in the middle of something important (nothing)",
+      "oh hey, was wondering when someone would need me. what's up",
+      "i have arrived. try to contain your excitement",
+      "you summoned me like i wasn't already here watching everything. anyway what's good",
+      "yeah yeah i'm here, what do you need — and don't say 'nothing' i can see you typing",
+      "look who needs pip. can't say i'm surprised tbh, i am pretty great",
+      "reporting for duty or whatever. seriously though what's going on",
+      "i was literally right here the whole time but sure, 'summon' me, very dramatic",
     ];
     const pick = summons[Math.floor(Math.random() * summons.length)];
     await message.reply(pick);
