@@ -5,14 +5,21 @@ import { logger } from '../utils/logger.js';
 function getAuth() {
   if (!config.GOOGLE_SERVICE_ACCOUNT) return null;
 
-  const credentials = JSON.parse(
-    Buffer.from(config.GOOGLE_SERVICE_ACCOUNT, 'base64').toString('utf-8'),
-  );
+  try {
+    const raw = Buffer.from(config.GOOGLE_SERVICE_ACCOUNT, 'base64').toString('utf-8');
+    const cleaned = raw.replace(/[\x00-\x1f\x7f]/g, (ch) =>
+      ch === '\n' || ch === '\r' || ch === '\t' ? ch : '',
+    );
+    const credentials = JSON.parse(cleaned);
 
-  return new google.auth.GoogleAuth({
-    credentials,
-    scopes: ['https://www.googleapis.com/auth/calendar'],
-  });
+    return new google.auth.GoogleAuth({
+      credentials,
+      scopes: ['https://www.googleapis.com/auth/calendar'],
+    });
+  } catch (err) {
+    logger.error({ err }, 'Failed to parse Google service account credentials — calendar disabled');
+    return null;
+  }
 }
 
 const auth = getAuth();

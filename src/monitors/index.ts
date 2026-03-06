@@ -3,6 +3,7 @@ import { startDatabaseMonitor } from './database.monitor.js';
 import { startWebsiteMonitor } from './website.monitor.js';
 import { startApiHealthMonitor } from './api-health.monitor.js';
 import { startReminderMonitor } from './reminder.monitor.js';
+import { startCalendarNudgeMonitor } from './calendar-nudge.monitor.js';
 import { logger } from '../utils/logger.js';
 
 export function startAllMonitors(client: Client) {
@@ -11,5 +12,6 @@ export function startAllMonitors(client: Client) {
   startWebsiteMonitor(client);
   startApiHealthMonitor(client);
   startReminderMonitor(client);
+  startCalendarNudgeMonitor(client);
   logger.info('All monitors started');
 }
