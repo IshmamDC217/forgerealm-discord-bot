@@ -15,6 +15,7 @@ const defaultState: MonitorState = {
   pageHashes: {},
   apiUp: true,
   apiDownSince: null,
+  lastNudgeAt: null,
 };
 
 export function loadState(): MonitorState {

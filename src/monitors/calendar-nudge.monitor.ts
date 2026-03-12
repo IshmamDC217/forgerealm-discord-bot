@@ -1,8 +1,7 @@
 import { Client, TextChannel } from 'discord.js';
 import { config } from '../config.js';
+import { loadState, saveState } from '../utils/state.js';
 import { logger } from '../utils/logger.js';
-
-const FOUR_DAYS_MS = 4 * 24 * 60 * 60 * 1000;
 
 const USERS = ['447033110773628930', '535658393562775562']; // Tobi, Ishmam
 
@@ -15,22 +14,39 @@ const nudges = [
   "quick one {user} — need anything added to the calendar? i'm right here, might as well use me",
 ];
 
-export function startCalendarNudgeMonitor(client: Client) {
-  logger.info('Calendar nudge monitor started (every 4 days)');
+const CHECK_INTERVAL_MS = 60 * 60 * 1000; // Check every hour if a nudge is due
 
-  // First nudge after 4 days, then every 4 days
-  setInterval(() => sendNudge(client), FOUR_DAYS_MS);
+export function startCalendarNudgeMonitor(client: Client) {
+  logger.info(`Calendar nudge monitor started (nudge interval: ${config.NUDGE_INTERVAL_MS / 86400000}d, checking hourly)`);
+
+  // Check immediately on startup, then every hour
+  setTimeout(() => checkAndNudge(client), 10_000); // 10s after boot to let things settle
+  setInterval(() => checkAndNudge(client), CHECK_INTERVAL_MS);
 }
 
-async function sendNudge(client: Client) {
+async function checkAndNudge(client: Client) {
   try {
+    const state = loadState();
+    const now = Date.now();
+
+    // If we've never nudged, or enough time has passed since last nudge
+    const lastNudge = state.lastNudgeAt ? new Date(state.lastNudgeAt).getTime() : 0;
+    const elapsed = now - lastNudge;
+
+    if (elapsed < config.NUDGE_INTERVAL_MS) return;
+
     const channel = client.channels.cache.get(config.CHANNEL_GENERAL) as TextChannel;
     if (!channel) return;
 
     const userId = USERS[Math.floor(Math.random() * USERS.length)];
     const msg = nudges[Math.floor(Math.random() * nudges.length)].replace('{user}', `<@${userId}>`);
     await channel.send(msg);
-    logger.info('Calendar nudge sent');
+
+    // Persist the nudge time
+    state.lastNudgeAt = new Date().toISOString();
+    saveState(state);
+
+    logger.info({ userId }, 'Calendar nudge sent');
   } catch (err) {
     logger.error({ err }, 'Calendar nudge error');
   }

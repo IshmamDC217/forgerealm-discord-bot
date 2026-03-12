@@ -13,6 +13,7 @@ export interface MonitorState {
   pageHashes: Record<string, string>;
   apiUp: boolean;
   apiDownSince: string | null;
+  lastNudgeAt: string | null;
 }
 
 export interface DBUser {
@@ -40,11 +41,39 @@ export interface CalendarEventData {
   date: string;
   allDay: boolean;
   time?: string;
+  checklist?: string[];
 }
 
 export interface CalendarExtraction {
   events: CalendarEventData[];
   reminders: { message: string; dueDate: string }[];
+  reply: string;
+}
+
+export interface SheetData {
+  title: string;
+  headers: string[];
+  rows: (string | number)[][];
+  currencyColumns: number[];
+  includeTotal: boolean;
+}
+
+export interface SheetExtraction {
+  sheet: SheetData;
+  reply: string;
+}
+
+export interface ProductAction {
+  type: 'create' | 'update' | 'delete';
+  name: string;
+  price?: number;
+  stock?: number;
+  description?: string;
+  updates?: Partial<{ name: string; price: number; stock: number; description: string }>;
+}
+
+export interface ProductExtraction {
+  action: ProductAction;
   reply: string;
 }
 

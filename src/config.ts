@@ -35,12 +35,16 @@ export const config = {
   // Groq AI
   GROQ_API_KEY: required('GROQ_API_KEY'),
 
-  // Google Calendar
+  // Google (Calendar + Sheets share the same service account)
   GOOGLE_SERVICE_ACCOUNT: optional('GOOGLE_SERVICE_ACCOUNT', ''),
   GOOGLE_CALENDAR_ID: optional('GOOGLE_CALENDAR_ID', ''),
+
+  // Permissions — Discord user IDs allowed to delete products
+  ADMIN_USER_IDS: optional('ADMIN_USER_IDS', '447033110773628930,535658393562775562').split(','),
 
   // Polling intervals
   POLL_DATABASE_MS: parseInt(optional('POLL_DATABASE_MS', '60000')),
   POLL_WEBSITE_MS: parseInt(optional('POLL_WEBSITE_MS', '300000')),
   POLL_API_HEALTH_MS: parseInt(optional('POLL_API_HEALTH_MS', '180000')),
+  NUDGE_INTERVAL_MS: parseInt(optional('NUDGE_INTERVAL_MS', String(4 * 24 * 60 * 60 * 1000))),
 } as const;

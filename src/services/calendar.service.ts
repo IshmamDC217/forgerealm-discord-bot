@@ -1,29 +1,9 @@
 import { google } from 'googleapis';
+import { googleAuth } from './google-auth.js';
 import { config } from '../config.js';
 import { logger } from '../utils/logger.js';
 
-function getAuth() {
-  if (!config.GOOGLE_SERVICE_ACCOUNT) return null;
-
-  try {
-    const raw = Buffer.from(config.GOOGLE_SERVICE_ACCOUNT, 'base64').toString('utf-8');
-    const cleaned = raw.replace(/[\x00-\x1f\x7f]/g, (ch) =>
-      ch === '\n' || ch === '\r' || ch === '\t' ? ch : '',
-    );
-    const credentials = JSON.parse(cleaned);
-
-    return new google.auth.GoogleAuth({
-      credentials,
-      scopes: ['https://www.googleapis.com/auth/calendar'],
-    });
-  } catch (err) {
-    logger.error({ err }, 'Failed to parse Google service account credentials — calendar disabled');
-    return null;
-  }
-}
-
-const auth = getAuth();
-const calendar = auth ? google.calendar({ version: 'v3', auth }) : null;
+const calendar = googleAuth ? google.calendar({ version: 'v3', auth: googleAuth }) : null;
 
 export const calendarService = {
   isConfigured(): boolean {
@@ -33,15 +13,21 @@ export const calendarService = {
   async createEvent(
     summary: string,
     date: string,
-    options: { allDay?: boolean; time?: string; description?: string } = {},
+    options: { allDay?: boolean; time?: string; description?: string; checklist?: string[] } = {},
   ): Promise<string | null> {
     if (!calendar) return null;
 
     try {
-      const event: any = {
-        summary,
-        description: options.description || '',
-      };
+      let description = options.description || '';
+
+      if (options.checklist && options.checklist.length > 0) {
+        const checklistText = options.checklist.map((item) => `[ ] ${item}`).join('\n');
+        description = description
+          ? `${description}\n\nChecklist:\n${checklistText}`
+          : `Checklist:\n${checklistText}`;
+      }
+
+      const event: any = { summary, description };
 
       if (options.allDay || !options.time) {
         event.start = { date };
@@ -68,11 +54,53 @@ export const calendarService = {
         requestBody: event,
       });
 
-      logger.info({ summary, date }, 'Calendar event created');
+      logger.info({ summary, date, hasChecklist: !!options.checklist }, 'Calendar event created');
       return res.data.id || null;
     } catch (err) {
       logger.error({ err }, 'Failed to create calendar event');
       return null;
+    }
+  },
+
+  async updateEvent(
+    eventId: string,
+    updates: { summary?: string; description?: string; date?: string; time?: string },
+  ): Promise<boolean> {
+    if (!calendar) return false;
+
+    try {
+      const existing = await calendar.events.get({
+        calendarId: config.GOOGLE_CALENDAR_ID,
+        eventId,
+      });
+
+      const body: any = { ...existing.data };
+
+      if (updates.summary) body.summary = updates.summary;
+      if (updates.description !== undefined) body.description = updates.description;
+      if (updates.date) {
+        if (updates.time) {
+          const dateTime = `${updates.date}T${updates.time}:00`;
+          body.start = { dateTime, timeZone: 'Europe/London' };
+          body.end = {
+            dateTime: new Date(new Date(dateTime).getTime() + 3600000).toISOString(),
+            timeZone: 'Europe/London',
+          };
+        } else {
+          body.start = { date: updates.date };
+          body.end = { date: updates.date };
+        }
+      }
+
+      await calendar.events.update({
+        calendarId: config.GOOGLE_CALENDAR_ID,
+        eventId,
+        requestBody: body,
+      });
+      return true;
+    } catch (err) {
+      logger.error({ err }, 'Failed to update calendar event');
+      return false;
     }
   },
 

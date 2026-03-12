@@ -25,8 +25,14 @@ export function buildCalendarConfirmEmbed(data: CalendarExtraction): EmbedBuilde
 
   if (data.events.length > 0) {
     const eventLines = data.events
-      .map((e) => `**${e.summary}** — ${formatDate(e.date)}${e.time ? ` at ${e.time}` : ''}`)
-      .join('\n');
+      .map((e) => {
+        let line = `**${e.summary}** — ${formatDate(e.date)}${e.time ? ` at ${e.time}` : ''}`;
+        if (e.checklist && e.checklist.length > 0) {
+          line += '\n' + e.checklist.map((item) => `  ☐ ${item}`).join('\n');
+        }
+        return line;
+      })
+      .join('\n\n');
     embed.addFields({ name: 'Events', value: eventLines });
   }
 
